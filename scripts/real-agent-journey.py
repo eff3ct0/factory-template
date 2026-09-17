@@ -43,6 +43,7 @@ COMPONENTS = {
     "assert": "scripts/real-agent-journey-assert.py",
     "cleanup": "scripts/real-agent-journey-cleanup.py",
 }
+SUPPORTED_RUNTIMES = {"codex-cli": {"provider": "openai", "version": "0.148.0"}}
 SAFE_STAGE = re.compile(r"[a-z][a-z0-9_-]{0,31}")
 SAFE_IDENTIFIER = re.compile(r"[A-Za-z0-9._:/-]{1,200}")
 PRIVATE_MARKER = re.compile(r"(?i)(?:token|secret|password|credential|api[_-]?key)")
@@ -293,7 +294,8 @@ def cleanup_readback(path, expected_repository, expected_owner, expected_run):
     return {"status": status, "deleted": safe_deleted[:MAX_FAILURES], "failures": safe_failures[:MAX_FAILURES]}
 
 
-def assert_journey(data, checkout, token, workflow_url, artifact_url, cleanup_path="", request_fn=api_request, runner=subprocess.run):
+def assert_journey(data, checkout, token, workflow_url, artifact_url, cleanup_path="", request_fn=api_request, runner=subprocess.run,
+                   require_cleanup=True):
     run = run_id(data["run_id"])
     source = repository(data["source_repository"])
     generated = repository(data["generated_repository"])
@@ -461,7 +463,8 @@ def assert_journey(data, checkout, token, workflow_url, artifact_url, cleanup_pa
         failure = {"boundary": current_boundary, "code": "assertion_unavailable", "message": safe_text(error)}
     finally:
         cleanup = cleanup_readback(cleanup_path, generated, owner, run)
-        if cleanup["status"] != "passed" and (failure is None or BOUNDARIES.index("cleanup") < BOUNDARIES.index(failure["boundary"])):
+        if (require_cleanup and cleanup["status"] != "passed" and
+                (failure is None or BOUNDARIES.index("cleanup") < BOUNDARIES.index(failure["boundary"]))):
             failure = {"boundary": "cleanup", "code": "cleanup_%s" % cleanup["status"],
                        "message": cleanup["failures"][0] if cleanup["failures"] else "cleanup did not pass"}
 
@@ -537,8 +540,12 @@ def journey_repository(owner, run_id):
 
 def validate_runtime(runtime):
     value = str(runtime or "").strip()
-    if not value or len(value) > 128 or any(ord(char) < 32 or ord(char) == 127 for char in value):
-        raise JourneyError("real-agent runtime is absent or malformed", "configuration_missing")
+    if not value:
+        raise JourneyError("real-agent runtime is missing", "runtime_missing")
+    if len(value) > 128 or any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise JourneyError("real-agent runtime is malformed", "runtime_invalid")
+    if value not in SUPPORTED_RUNTIMES:
+        raise JourneyError("real-agent runtime is unsupported", "runtime_unsupported")
     return value
 
 
@@ -561,6 +568,23 @@ def component_path(stage):
     return COMPONENTS[stage]
 
 
+def stage_envelope(stage, run, repository_name, status, identifiers=None, failure_code=""):
+    if stage not in STAGES:
+        raise JourneyError("unknown journey stage: %s" % stage, "stage_invalid")
+    if status not in ("passed", "failed", "blocked", "inconclusive"):
+        raise JourneyError("stage evidence has an invalid status", "stage_invalid")
+    failure_code = "" if status == "passed" else str(failure_code or "stage_failed")
+    return {
+        "schema_version": ENVELOPE_VERSION,
+        "stage": stage,
+        "run_id": str(run),
+        "repository": str(repository_name),
+        "status": status,
+        "failure_code": failure_code if SAFE_STAGE.fullmatch(failure_code) else "stage_failed",
+        "identifiers": identifiers or {},
+    }
+
+
 def stage_environment(base, stage, context):
     """Return the minimum environment for one child adapter.
 
@@ -579,10 +603,10 @@ def stage_environment(base, stage, context):
     if context.get("runtime"):
         environment["JOURNEY_AGENT_RUNTIME"] = validate_runtime(context["runtime"])
     credential = {
-        "provision": "lifecycle_token",
+        "provision": "provision_token",
         "agent": "agent_token",
         "assert": "read_token",
-        "cleanup": "lifecycle_token",
+        "cleanup": "cleanup_token",
     }[stage]
     if context.get(credential):
         environment["JOURNEY_TOKEN"] = context[credential]
@@ -657,18 +681,16 @@ def aggregate(stage_dir, run_id, repository, runtime=None, workflow_url=None):
             "runtime": None, "stages": {}, "result": "failed", "failure_code": error.failure_code,
             "cleanup_status": "not-attempted", "workflow_url": workflow_url or None,
         }
+    runtime_failure = ""
     if runtime is not None:
         try:
             runtime = validate_runtime(runtime)
         except JourneyError as error:
-            return {
-                "schema_version": ENVELOPE_VERSION, "run_id": run_id, "repository": repository,
-                "runtime": None, "stages": {}, "result": "failed", "failure_code": error.failure_code,
-                "cleanup_status": "not-attempted", "workflow_url": workflow_url or None,
-            }
+            runtime_failure = error.failure_code
+            runtime = None
     stages = {}
     identifiers = {}
-    failure_code = ""
+    failure_code = runtime_failure
     cleanup_status = "not-attempted"
     for stage in STAGES:
         try:
@@ -731,6 +753,14 @@ def contract_plan(run_id, template, owner="", runtime=""):
 def contract_self_check():
     assert validate_run_id("123") == "123"
     assert journey_repository("acme", "123") == "acme/real-agent-journey-123"
+    assert validate_runtime("codex-cli") == "codex-cli"
+    for value, code in (("", "runtime_missing"), ("other-runtime", "runtime_unsupported")):
+        try:
+            validate_runtime(value)
+        except JourneyError as error:
+            assert error.failure_code == code
+        else:
+            raise AssertionError("unsupported runtime accepted")
     assert component_path("agent").endswith("real-agent-journey-agent.py")
     decisions = {key: key for key in DECISIONS}
     assert validate_decisions(decisions) == decisions
@@ -742,7 +772,7 @@ def contract_self_check():
         raise AssertionError("incomplete decisions accepted")
     environment = stage_environment(
         {"PATH": "/bin", "SECRET": "must-not-pass"}, "agent",
-        {"run_id": "123", "repository": "acme/real-agent-journey-123", "runtime": "configured",
+        {"run_id": "123", "repository": "acme/real-agent-journey-123", "runtime": "codex-cli",
          "lifecycle_token": "lifecycle", "agent_token": "agent"},
     )
     assert environment["JOURNEY_TOKEN"] == "agent"
@@ -759,7 +789,7 @@ def contract_self_check():
                     "cleanup": {"owner": "acme", "target": "acme/real-agent-journey-123"},
                 }[stage],
             })
-        result = aggregate(directory, "123", "acme/real-agent-journey-123", "configured")
+        result = aggregate(directory, "123", "acme/real-agent-journey-123", "codex-cli")
         assert result["result"] == "passed" and result["cleanup_status"] == "passed", result
         Path(directory, "cleanup.json").write_text("{}", encoding="utf-8")
         result = aggregate(directory, "123", "acme/real-agent-journey-123")

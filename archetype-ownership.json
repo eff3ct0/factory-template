@@ -34,7 +34,11 @@
         {"path": "scripts/test-real-agent-e2e.py", "kind": "file"},
         {"path": ".github/workflows/real-agent-journey.yml", "kind": "file"},
         {"path": "scripts/real-agent-journey.py", "kind": "file"},
-        {"path": "scripts/test-real-agent-journey.py", "kind": "file"}
+        {"path": "scripts/test-real-agent-journey.py", "kind": "file"},
+        {"path": "scripts/real-agent-journey-provision.py", "kind": "file"},
+        {"path": "scripts/real-agent-journey-agent.py", "kind": "file"},
+        {"path": "scripts/real-agent-journey-assert.py", "kind": "file"},
+        {"path": "scripts/real-agent-journey-cleanup.py", "kind": "file"}
       ]
     },
     "initializer_inputs": {

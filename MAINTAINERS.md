@@ -116,10 +116,12 @@ whose proof is missing or mismatched.
 
 The real-agent user journey is defined in [`docs/real-agent-journey.md`](docs/real-agent-journey.md) and
 `.github/workflows/real-agent-journey.yml`. It is initially manual/nightly, not release-triggered. The parent
-workflow owns stage ordering, run identity, credential separation, fail-closed aggregation, and bounded evidence;
-the provisioning, agent, assertion, and cleanup adapters are delivered by issues #88-#90. It deliberately does
-not select an agent provider or runtime. Configure `REAL_AGENT_JOURNEY_RUNTIME` only when a reviewed adapter is
-available; an absent adapter must fail closed rather than use a mock.
+workflow owns stage ordering, run identity, credential separation, fail-closed aggregation, and bounded evidence.
+The supported adapter identifier is `codex-cli`, which selects the pinned
+`@openai/codex@0.148.0` runtime without selecting a secret. Configure
+`REAL_AGENT_JOURNEY_RUNTIME=codex-cli` only when the dedicated agent API key,
+model variable, and GitHub App credentials are available; missing credentials
+must fail closed rather than use a mock.
 
 ## Cold real-agent journey contract
 

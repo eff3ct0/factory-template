@@ -137,11 +137,21 @@ def test_timeout_fails_closed():
         assert result["failure"]["boundary"] == "test" and result["failure"]["code"] == "test_failed"
 
 
+def test_assert_stage_can_finish_before_cleanup():
+    with tempfile.TemporaryDirectory() as tmp:
+        data, checkout, _, _, _ = fixture(tmp)
+        result = journey.assert_journey(data, checkout, "token",
+                                        "https://github.com/eff3ct0/factory-template/actions/runs/123", "",
+                                        request_fn=api_fixture(), runner=runner_factory(), require_cleanup=False)
+        assert result["status"] == "passed", result
+
+
 if __name__ == "__main__":
     test_passing_fixture_and_bounded_evidence()
     test_earliest_boundaries_and_cleanup_are_preserved()
     test_missing_and_malformed_inputs_fail_closed()
     test_timeout_fails_closed()
+    test_assert_stage_can_finish_before_cleanup()
 def test_contract_plan_is_provider_neutral():
     plan = journey.contract_plan("123", "eff3ct0/factory-template")
     assert plan["runtime"] is None
@@ -163,6 +173,42 @@ def test_identity_and_decisions_fail_closed():
         assert error.failure_code == "decisions_incomplete"
     else:
         raise AssertionError("incomplete decision set accepted")
+
+
+def test_runtime_and_adapter_contract():
+    assert journey.validate_runtime("codex-cli") == "codex-cli"
+    for runtime, code in (("", "runtime_missing"), ("mock", "runtime_unsupported")):
+        try:
+            journey.validate_runtime(runtime)
+        except journey.JourneyError as error:
+            assert error.failure_code == code
+        else:
+            raise AssertionError("invalid runtime accepted")
+    for stage, path in journey.COMPONENTS.items():
+        assert path == journey.component_path(stage)
+        assert (ROOT / path).is_file(), path
+    context = {"run_id": "123", "repository": "acme/real-agent-journey-123",
+               "provision_token": "provision", "cleanup_token": "cleanup"}
+    assert journey.stage_environment({}, "provision", context)["JOURNEY_TOKEN"] == "provision"
+    assert journey.stage_environment({}, "cleanup", context)["JOURNEY_TOKEN"] == "cleanup"
+
+
+def test_stage_schema_identity_and_approval_fail_closed():
+    payload = {
+        "schema_version": journey.ENVELOPE_VERSION, "stage": "agent", "run_id": "123",
+        "repository": "acme/real-agent-journey-123", "status": "passed",
+        "identifiers": {"issue": "7", "branch": "feature/7-small-feature",
+                        "commit": COMMIT, "tests": "passed"},
+    }
+    assert journey.validate_stage("agent", payload, "123", "acme/real-agent-journey-123")["status"] == "passed"
+    for invalid in ({**payload, "run_id": "124"}, {**payload, "schema_version": "other/v1"},
+                    {**payload, "status": "failed", "failure_code": ""}):
+        try:
+            journey.validate_stage("agent", invalid, "123", "acme/real-agent-journey-123")
+        except journey.JourneyError:
+            pass
+        else:
+            raise AssertionError("invalid stage evidence accepted")
 
 
 def test_aggregate_rejects_mismatch_and_cleanup_failure():
@@ -195,8 +241,28 @@ def test_aggregate_rejects_mismatch_and_cleanup_failure():
         assert result["cleanup_status"] == "failed"
 
 
+def test_unsupported_runtime_keeps_cleanup_evidence():
+    with tempfile.TemporaryDirectory() as directory:
+        directory = Path(directory)
+        for stage in journey.STAGES:
+            identifiers = {
+                "provision": {"source_template": "eff3ct0/factory-template", "default_branch": "main", "revision": SHA},
+                "agent": {"issue": "12", "branch": "feature/12-example", "commit": COMMIT, "tests": "passed"},
+                "assert": {"checkout_head": COMMIT},
+                "cleanup": {"owner": "acme", "target": "acme/real-agent-journey-123"},
+            }[stage]
+            (directory / (stage + ".json")).write_text(json.dumps({
+                "schema_version": journey.ENVELOPE_VERSION, "stage": stage, "run_id": "123",
+                "repository": "acme/real-agent-journey-123", "status": "passed", "identifiers": identifiers,
+            }), encoding="utf-8")
+        result = journey.aggregate(directory, "123", "acme/real-agent-journey-123", "unsupported")
+        assert result["result"] == "failed" and result["failure_code"] == "runtime_unsupported"
+        assert result["cleanup_status"] == "passed"
+
+
 if __name__ == "__main__":
     test_contract_plan_is_provider_neutral()
     test_identity_and_decisions_fail_closed()
     test_aggregate_rejects_mismatch_and_cleanup_failure()
+    test_unsupported_runtime_keeps_cleanup_evidence()
     print("real-agent journey offline tests OK")

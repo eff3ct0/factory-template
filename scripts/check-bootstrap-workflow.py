@@ -79,13 +79,26 @@ def check():
             raise AssertionError("real-agent journey is missing required action pin: %s" % action)
     for required in ("schedule:", "workflow_dispatch:", "permissions: {}", "cancel-in-progress: false",
                      "if: always()", "JOURNEY_RUNTIME", "real-agent-journey.py collect",
-                     "retention-days: 7"):
+                     "retention-days: 7", "JOURNEY_CONTRACT_VERSION: real-agent-journey/v1", "Install selected runtime", "--provision stage-input/provision.json",
+                     "--agent stage-input/agent.json", "--workspace generated", "REAL_AGENT_JOURNEY_API_KEY"):
         if required not in journey:
             raise AssertionError("real-agent journey is missing %s" % required)
-    if "release:" in journey or "OPENAI_API_KEY" in journey:
-        raise AssertionError("real-agent journey must not be a release gate or receive model credentials")
-    if "scripts/real-agent-journey-cleanup.py" not in journey:
-        raise AssertionError("real-agent journey cleanup adapter is missing")
+    if "release:" in journey:
+        raise AssertionError("real-agent journey must not be a release gate")
+    for adapter in ("provision", "agent", "assert", "cleanup"):
+        path = ROOT / "scripts" / ("real-agent-journey-%s.py" % adapter)
+        if not path.is_file() or "scripts/real-agent-journey-%s.py" % adapter not in journey:
+            raise AssertionError("real-agent journey %s adapter is missing" % adapter)
+    if journey.count("actions/create-github-app-token@") != 4:
+        raise AssertionError("real-agent journey must mint one token per credential boundary")
+    agent = journey.split("\n  agent:\n", 1)[1].split("\n  assert:\n", 1)[0]
+    if "OPENAI_API_KEY" not in agent or "BOOTSTRAP_E2E_TOKEN" in agent:
+        raise AssertionError("agent credentials are not isolated")
+    for other in (journey.split("\n  provision:\n", 1)[1].split("\n  agent:\n", 1)[0],
+                  journey.split("\n  assert:\n", 1)[1].split("\n  cleanup:\n", 1)[0],
+                  journey.split("\n  cleanup:\n", 1)[1].split("\n  report:\n", 1)[0]):
+        if "OPENAI_API_KEY" in other:
+            raise AssertionError("agent API credentials crossed a stage boundary")
     print("real-agent journey workflow static check OK")
 
     assertions = ASSERTIONS_WORKFLOW.read_text(encoding="utf-8")

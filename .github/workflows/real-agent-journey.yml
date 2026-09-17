@@ -21,6 +21,8 @@ env:
   JOURNEY_TEMPLATE: eff3ct0/factory-template
   JOURNEY_OWNER: ${{ vars.BOOTSTRAP_E2E_OWNER }}
   JOURNEY_RUNTIME: ${{ vars.REAL_AGENT_JOURNEY_RUNTIME }}
+  JOURNEY_CONTRACT_VERSION: real-agent-journey/v1
+  JOURNEY_REPOSITORY: ${{ vars.BOOTSTRAP_E2E_OWNER && format('{0}/real-agent-journey-{1}', vars.BOOTSTRAP_E2E_OWNER, github.run_id) || '' }}
 
 jobs:
   prepare:
@@ -40,6 +42,10 @@ jobs:
         run: |
           python3 scripts/real-agent-journey.py --self-check
           python3 scripts/test-real-agent-journey.py
+          python3 scripts/real-agent-journey-provision.py --self-check
+          python3 scripts/real-agent-journey-agent.py --self-check
+          python3 scripts/real-agent-journey-assert.py --self-check
+          python3 scripts/real-agent-journey-cleanup.py --self-check
       - name: Write run plan
         id: plan
         env:
@@ -60,7 +66,7 @@ jobs:
           python3 scripts/real-agent-journey.py plan \
             --run-id "$RUN_ID" --template "$TEMPLATE" --owner "$OWNER" \
             --runtime "$RUNTIME" --output journey/contract.json
-          printf 'repository=%s\n' "${OWNER:+$OWNER/real-agent-journey-$RUN_ID}" >> "$GITHUB_OUTPUT"
+          printf 'repository=%s\n' "$JOURNEY_REPOSITORY" >> "$GITHUB_OUTPUT"
       - name: Upload run plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -122,6 +128,20 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
+      - name: Download provisioning evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: real-agent-journey-${{ github.run_id }}-provision
+          path: stage-input
+          if-no-artifact-found: error
+      - name: Read generated default branch
+        id: provision
+        run: |
+          branch=$(python3 -c 'import json; print(json.load(open("stage-input/provision.json", encoding="utf-8"))["identifiers"]["default_branch"])')
+          case "$branch" in
+            [A-Za-z0-9._/-]*) printf 'branch=%s\n' "$branch" >> "$GITHUB_OUTPUT" ;;
+            *) printf 'generated default branch is invalid\n' >&2; exit 1 ;;
+          esac
       - name: Mint agent token
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
@@ -131,18 +151,33 @@ jobs:
           owner: ${{ env.JOURNEY_OWNER }}
           permission-contents: write
           permission-issues: write
+      - name: Check out generated repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ needs.prepare.outputs.repository }}
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ steps.provision.outputs.branch }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: generated
+      - name: Install selected runtime
+        run: npm install --global @openai/codex@0.148.0
       - name: Run cold-agent adapter
         env:
           JOURNEY_TOKEN: ${{ steps.app-token.outputs.token }}
+          OPENAI_API_KEY: ${{ secrets.REAL_AGENT_JOURNEY_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
           JOURNEY_OUTPUT: stage/agent.json
         run: |
           mkdir -p stage
           env -i "PATH=$PATH" "HOME=$HOME" "LANG=$LANG" \
             JOURNEY_RUN_ID="$JOURNEY_RUN_ID" JOURNEY_REPOSITORY="${{ needs.prepare.outputs.repository }}" \
             JOURNEY_RUNTIME="$JOURNEY_RUNTIME" JOURNEY_TOKEN="$JOURNEY_TOKEN" \
+            OPENAI_API_KEY="$OPENAI_API_KEY" OPENAI_MODEL="$OPENAI_MODEL" \
             python3 scripts/real-agent-journey-agent.py \
               --repository "${{ needs.prepare.outputs.repository }}" --run-id "$JOURNEY_RUN_ID" \
-              --runtime "$JOURNEY_RUNTIME" --output "$JOURNEY_OUTPUT"
+              --runtime "$JOURNEY_RUNTIME" --provision stage-input/provision.json \
+              --workspace generated --decisions scripts/real-agent-decisions.json --output "$JOURNEY_OUTPUT"
       - name: Upload agent evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -167,6 +202,22 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
+      - name: Download agent evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: real-agent-journey-${{ github.run_id }}-agent
+          path: stage-input
+          if-no-artifact-found: error
+      - name: Read implementation branch
+        id: metadata
+        env:
+          AGENT_EVIDENCE: stage-input/agent.json
+        run: |
+          branch=$(python3 -c 'import json, os; print(json.load(open(os.environ["AGENT_EVIDENCE"], encoding="utf-8"))["identifiers"]["branch"])')
+          case "$branch" in
+            feature/[0-9]*-[a-z0-9-]*) printf 'branch=%s\n' "$branch" >> "$GITHUB_OUTPUT" ;;
+            *) printf 'agent branch is invalid\n' >&2; exit 1 ;;
+          esac
       - name: Mint readback token
         id: app-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
@@ -177,6 +228,16 @@ jobs:
           permission-actions: read
           permission-contents: read
           permission-issues: read
+      - name: Check out generated implementation
+        continue-on-error: true
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ needs.prepare.outputs.repository }}
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ steps.metadata.outputs.branch }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: generated
       - name: Run independent assertion adapter
         env:
           JOURNEY_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -185,6 +246,9 @@ jobs:
           mkdir -p stage
           python3 scripts/real-agent-journey-assert.py \
             --repository "${{ needs.prepare.outputs.repository }}" --run-id "$JOURNEY_RUN_ID" \
+            --agent stage-input/agent.json --workspace generated \
+            --workflow-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --artifact-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --output "$JOURNEY_OUTPUT"
       - name: Upload assertion evidence
         if: always()
@@ -210,6 +274,7 @@ jobs:
           persist-credentials: false
       - name: Mint cleanup token
         id: app-token
+        continue-on-error: true
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
         with:
           app-id: ${{ secrets.BOOTSTRAP_E2E_APP_ID }}
@@ -225,7 +290,7 @@ jobs:
         run: |
           mkdir -p stage
           python3 scripts/real-agent-journey-cleanup.py \
-            --owner "$JOURNEY_OWNER" --run-id "$JOURNEY_RUN_ID" \
+            --template "$JOURNEY_TEMPLATE" --owner "$JOURNEY_OWNER" --run-id "$JOURNEY_RUN_ID" \
             --output "$JOURNEY_OUTPUT"
       - name: Upload cleanup evidence
         if: always()
@@ -259,7 +324,7 @@ jobs:
           if-no-artifact-found: warn
       - name: Aggregate bounded journey evidence
         env:
-          JOURNEY_REPOSITORY: ${{ needs.prepare.outputs.repository }}
+          JOURNEY_REPOSITORY: ${{ needs.prepare.outputs.repository || (vars.BOOTSTRAP_E2E_OWNER && format('{0}/real-agent-journey-{1}', vars.BOOTSTRAP_E2E_OWNER, github.run_id)) || '' }}
           JOURNEY_RUNTIME: ${{ env.JOURNEY_RUNTIME }}
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |

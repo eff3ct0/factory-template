@@ -1,8 +1,30 @@
-# Real-agent journey assertion contract
+# Real-agent Journey Operations
 
 The reusable workflow `.github/workflows/real-agent-journey-assertions.yml`
 contains only independent readback and reporting. Provisioning and agent
 invocation remain upstream responsibilities.
+
+## Runtime Adapter Contract
+
+`REAL_AGENT_JOURNEY_RUNTIME` must be the identifier `codex-cli`. It selects the
+pinned `@openai/codex@0.148.0` executable used by
+`scripts/real-agent-journey-agent.py`; it is not a secret, model name, or
+credential selector. Missing, malformed, and unsupported values fail in
+`prepare` before repository provisioning.
+
+The four adapters are executable entry points, not placeholders:
+
+- `scripts/real-agent-journey-provision.py` creates and reads back the exact
+  `real-agent-journey-<run-id>` repository.
+- `scripts/real-agent-journey-agent.py` runs the existing cold Codex helper.
+- `scripts/real-agent-journey-assert.py` independently reads GitHub and the
+  generated checkout.
+- `scripts/real-agent-journey-cleanup.py` verifies and deletes only the exact
+  run-scoped repository.
+
+Every adapter emits one bounded `real-agent-journey/v1` envelope. Set
+`REAL_AGENT_JOURNEY_RUNTIME=codex-cli` only after the required hosted settings
+are available.
 
 ## Inputs from the journey
 
@@ -125,9 +147,32 @@ an unrelated repository. Human approval remains a real external gate.
 The workflow reuses the existing immutable action pins and disposable-owner
 pattern from the release/template bootstrap checks. `BOOTSTRAP_E2E_OWNER` and
 the dedicated GitHub App credentials are the lifecycle configuration.
-`REAL_AGENT_JOURNEY_RUNTIME` is required for a hosted run and identifies an
-installed adapter without selecting one in this contract; an absent or empty
-value fails before repository provisioning.
+`REAL_AGENT_JOURNEY_RUNTIME=codex-cli` is required for a hosted run and selects
+the reviewed pinned adapter. The runtime value never selects a credential.
+
+## Hosted Run Setup
+
+Configure these repository settings:
+
+- Actions variable `BOOTSTRAP_E2E_OWNER`: disposable owner for the private
+  generated repository.
+- Actions variable `REAL_AGENT_JOURNEY_RUNTIME`: exactly `codex-cli`.
+- Actions variable `OPENAI_MODEL`: an available bounded model identifier.
+- Actions secret `BOOTSTRAP_E2E_APP_ID` and
+  `BOOTSTRAP_E2E_PRIVATE_KEY`: dedicated GitHub App credentials used to mint
+  separate provisioning, agent, readback, and cleanup tokens.
+- Actions secret `REAL_AGENT_JOURNEY_API_KEY`: OpenAI credential passed only to
+  the agent adapter.
+
+Dispatch **Real-agent user journey** with `confirm=RUN`. The workflow checks
+out the trusted workflow revision, provisions the exact generated repository,
+runs the cold agent on `main`, checks out its implementation branch for
+independent readback, aggregates bounded evidence, and always attempts cleanup.
+
+If a run stops before cleanup, restore the dedicated App credentials and rerun
+the cleanup adapter for the exact numeric run ID and configured owner. Never
+use a prefix scan or delete a repository whose owner/name readback does not
+match `real-agent-journey-<run-id>`.
 
 ## Evidence and cleanup
 
