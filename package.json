@@ -1,0 +1,27 @@
+{
+  "name": "factory-template-creator",
+  "version": "0.1.0",
+  "description": "Immutable, versioned project payload metadata for the factory template creator.",
+  "type": "commonjs",
+  "bin": {
+    "factory-template": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@12.4.2",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm build && node --test test/*.test.mjs",
+    "prepack": "pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.21",
+    "typescript": "5.8.3"
+  },
+  "license": "MIT"
+}

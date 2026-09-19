@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "package_name": "factory-template-creator",
+  "package_version": "0.1.0",
+  "payload_version": "1.0.0",
+  "files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug.yml",
+      "mode": "100644",
+      "size": 952,
+      "sha256": "d9be6f81c8835d68c9e2ee73d9e0750e78dddb7c067c43dd7933318da67bae55"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "mode": "100644",
+      "size": 28,
+      "sha256": "1f103c6a9dd07cd13a9a6f17ace6b813f47747eb9cb7e00488cb2073caaf91bb"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/dx-feedback.yml",
+      "mode": "100644",
+      "size": 1161,
+      "sha256": "a71cd2de6fca2adde2de1975188d79c58b6cd6712bfcf3251a546c9a66b977f1"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/task.yml",
+      "mode": "100644",
+      "size": 1115,
+      "sha256": "9ee423524b0cc1f7aab07ceb8c5fff832c42a3d47240159dc2294c1b4dfd9593"
+    },
+    {
+      "path": ".github/labels.json",
+      "mode": "100644",
+      "size": 1019,
+      "sha256": "76a0b99f5357ae9ea25e6dec4cbe898dd5efe156d19e831f4f3767aa190bca2c"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "mode": "100644",
+      "size": 1104,
+      "sha256": "0878c85a1df44f742123e100a7900d54a69cec1ebd30e7842d757054a703f338"
+    },
+    {
+      "path": ".github/workflows/governance.yml",
+      "mode": "100644",
+      "size": 694,
+      "sha256": "a7deef5595b4aad0ac5c9f35e6f60f482ebd5a5b3c25a86f5b0cb2ad72ad4ebd"
+    },
+    {
+      "path": ".github/workflows/sync-labels.yml",
+      "mode": "100644",
+      "size": 418,
+      "sha256": "af67210e38d90f1ed7f33317f88407dc6b1f28608a76b00b605435460f2ea427"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "size": 294,
+      "sha256": "fd529ea706bdbf87db72cca6977aaffb0e108c81104a997e019e9e4f728a93c1"
+    },
+    {
+      "path": "AGENT.md",
+      "mode": "100644",
+      "size": 10260,
+      "sha256": "b1abd9737b04a3008ebde150aa389703f788cdd9551ace207177da97abf6a2ed"
+    },
+    {
+      "path": "CLAUDE.md",
+      "mode": "100644",
+      "size": 545,
+      "sha256": "40513cd15cb808f81441d7734cd24bdad3dd4846404e1bca64906e8fab641453"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "size": 8584,
+      "sha256": "8e12ce7d646f29847e1fb3ce3a2df8516c077f0994ea3d452043b813c39ff730"
+    },
+    {
+      "path": "archetype-ownership.json",
+      "mode": "100644",
+      "size": 5194,
+      "sha256": "34b410dd123d1e1db4cdef886453552831b7a05be2901dcabf7faa4e8f6ec639"
+    },
+    {
+      "path": "checks/phase_state_check.py",
+      "mode": "100644",
+      "size": 10734,
+      "sha256": "549111f8db138715f4d004f462366912dc4e121439c8afd428919cb072ed44e7"
+    },
+    {
+      "path": "docs/agent-init.md",
+      "mode": "100644",
+      "size": 9130,
+      "sha256": "3e3f02db9f6aec4a7020162d53a27265c97394cd25694be8181d45fc11fc3661"
+    },
+    {
+      "path": "docs/bootstrap.md",
+      "mode": "100644",
+      "size": 6531,
+      "sha256": "bc5d84395371775dad99263f74aa80951de9dabfc50e91f448a46ad97545ba50"
+    },
+    {
+      "path": "docs/determinism.md",
+      "mode": "100644",
+      "size": 9815,
+      "sha256": "6c647f009f3223cb09d9a8323f30222d85e65891075f105c8cc4e00fd23bf033"
+    },
+    {
+      "path": "docs/engineering-handbook.md",
+      "mode": "100644",
+      "size": 2042,
+      "sha256": "09ceb1808bb6937f04e598f8bdef065f69c07521a42f4640bcdff5bcd0cca0a3"
+    },
+    {
+      "path": "docs/factory-layout.md",
+      "mode": "100644",
+      "size": 9188,
+      "sha256": "6dadbb7e30cea6453b342e414560a27788be00e2ca469939ef7e7211544b550f"
+    },
+    {
+      "path": "docs/github-governance.md",
+      "mode": "100644",
+      "size": 1711,
+      "sha256": "17a3a5b105e4c261d264688a90f07eee20b8be9f213a0eff4566454cc4bc1b64"
+    },
+    {
+      "path": "docs/org-factory.md",
+      "mode": "100644",
+      "size": 3205,
+      "sha256": "19f01af2cf3ae10fee04744e6a8c81857a956427570fdcd593bcae44371fb5dc"
+    },
+    {
+      "path": "docs/workflow.md",
+      "mode": "100644",
+      "size": 3255,
+      "sha256": "7f15a68cc77bae682674e8ac0911535cf477a1832c24e933a4681f5e4fc38098"
+    },
+    {
+      "path": "hooks/README.md",
+      "mode": "100644",
+      "size": 2629,
+      "sha256": "33ece14e01c4e75fe4eccc3f229aed50c8934c1f066e4c7b7dd786355df6e031"
+    },
+    {
+      "path": "hooks/claude-code/session-start.sh",
+      "mode": "100755",
+      "size": 267,
+      "sha256": "f66d49ea9514c38084b1970ff0679d6eca8a9c38206b563b0ea3880d7d65ebdf"
+    },
+    {
+      "path": "hooks/opencode/factory-start.ts",
+      "mode": "100644",
+      "size": 573,
+      "sha256": "ff3d7455e0eb771d4509ab280c6638644cc4e35ecff36ee63ad35a923e8d53b0"
+    },
+    {
+      "path": "hooks/pi/factory-start.ts",
+      "mode": "100644",
+      "size": 621,
+      "sha256": "153d8c87ffebf81dfdfe3c615de73001b270152099cc9eb81fa8046b6ebf5c89"
+    },
+    {
+      "path": "placeholders.json",
+      "mode": "100644",
+      "size": 5998,
+      "sha256": "41cc72b3e94c5b59e641b859758b44bb3f4ad764909ba35cea34a49a49ce378b"
+    },
+    {
+      "path": "scripts/check-delivery-contract.py",
+      "mode": "100644",
+      "size": 17694,
+      "sha256": "42c89303d9f0e228bf86a75e2431a810697460cb3353c00e0fd5308152e7d3b7"
+    },
+    {
+      "path": "scripts/check-determinism.py",
+      "mode": "100644",
+      "size": 21025,
+      "sha256": "9fe260869b97dd0de1a21e620b4d1e3610bbddbcd74b9789f680cc781adfc49e"
+    },
+    {
+      "path": "scripts/check-factory-layout.py",
+      "mode": "100644",
+      "size": 5463,
+      "sha256": "7abce0da41d2667891fe7ceec1068b713dd549855e7d25867e6efb759b4b49b0"
+    },
+    {
+      "path": "scripts/check-pr-governance.py",
+      "mode": "100644",
+      "size": 4844,
+      "sha256": "e8d4c478aac4fe5f6ab2c788a5c65e65d7a93b0168a0ece4f4d712fb5887e560"
+    },
+    {
+      "path": "scripts/sync-github-labels.py",
+      "mode": "100644",
+      "size": 2428,
+      "sha256": "ff40fd8568def858f100fff682559a3e75e6011860eb467143875a8625168ac6"
+    },
+    {
+      "path": "start.py",
+      "mode": "100644",
+      "size": 6068,
+      "sha256": "11fd608b51c873899f8be1d425eaaa9565548cc223ab4587d12fdec18b670945"
+    },
+    {
+      "path": "templates/adr.md",
+      "mode": "100644",
+      "size": 418,
+      "sha256": "f80da6b5bcf7e4b3828667e3a6779f8902b792eeee01395d57374c9f02b97bcc"
+    },
+    {
+      "path": "templates/agent-runbook.md",
+      "mode": "100644",
+      "size": 7375,
+      "sha256": "ae2383f49e2a694df369b15906afe65f653d54d63efc9c33f432120be87b668d"
+    },
+    {
+      "path": "templates/definition-of-done.md",
+      "mode": "100644",
+      "size": 765,
+      "sha256": "bb6589566fbecafa77ae635f3e1562a967665bf73a5d3987a87a2334388ef314"
+    },
+    {
+      "path": "templates/handoff.md",
+      "mode": "100644",
+      "size": 938,
+      "sha256": "ed71fc4f5169c110a159a33cc4662da29166fc4f810ce728695f6eadd4806adc"
+    },
+    {
+      "path": "templates/pull-request.md",
+      "mode": "100644",
+      "size": 839,
+      "sha256": "0c32c20a6c617a3489decf8d4e0d97a1993d2653df53ce8066bf67de005c5a9d"
+    },
+    {
+      "path": "templates/spec.md",
+      "mode": "100644",
+      "size": 577,
+      "sha256": "cfecccb6f391112254fbc5aabf1e6533f2d8467c62da3aabe9b2f572f3fe0a58"
+    },
+    {
+      "path": "templates/ticket.md",
+      "mode": "100644",
+      "size": 748,
+      "sha256": "08f6cda5ce8e591f9ba427c0512805759ecc810dd530b3850287da33ab2acd89"
+    },
+    {
+      "path": "test_factory_bootstrap.py",
+      "mode": "100644",
+      "size": 4474,
+      "sha256": "7435f4f9ec749a37e770cee3afc405b762645cd8415fde41608fbc5ec4aeb510"
+    },
+    {
+      "path": "test_init.py",
+      "mode": "100644",
+      "size": 5787,
+      "sha256": "60e23c53b7b80b84e18feae494ed06f793e8033850069c42acbdd43af809bca2"
+    }
+  ],
+  "payload_digest": "sha256:be1647f4a5e0bf4197baccc7edbe07fb9c1a5c46fb0eb31e8d9689e7088714aa"
+}

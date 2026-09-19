@@ -43,6 +43,19 @@
         {"path": "placeholders.json", "kind": "file"}
       ]
     },
+    "creator_packaging": {
+      "disposition": "removed",
+      "paths": [
+        {"path": "package.json", "kind": "file"},
+        {"path": "pnpm-lock.yaml", "kind": "file"},
+        {"path": "tsconfig.json", "kind": "file"},
+        {"path": "package", "kind": "directory"},
+        {"path": "src", "kind": "directory"},
+        {"path": "test", "kind": "directory"},
+        {"path": "scripts/build-payload.mjs", "kind": "file"},
+        {"path": "scripts/build.mjs", "kind": "file"}
+      ]
+    },
     "provider_ci_recipes": {
       "disposition": "removed",
       "paths": [

@@ -8,8 +8,9 @@
 .idea/
 .vscode/
 # Dependencias / build (descomentar lo que aplique):
-# node_modules/
-# dist/
+node_modules/
+dist/
+.codegraph/
 # build/
 # target/
 # .venv/

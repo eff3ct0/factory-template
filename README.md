@@ -21,6 +21,26 @@ repository**: create a new repo from this structure and fill the `<PLACEHOLDER>`
 - [`.github/labels.json`](.github/labels.json) + [`scripts/`](scripts/) - canonical GitHub labels, idempotent synchronization, and PR governance validation.
 - [`docs/github-governance.md`](docs/github-governance.md) - the stable required check and the separate `main` branch enforcement settings.
 
+## Immutable creator package
+
+The Node creator package is named `factory-template-creator` until registry
+ownership and publish access are verified. The package uses Node.js 20.19 or
+newer and pnpm. Its build derives the payload boundary from
+`archetype-ownership.json`, preserves `placeholders.json` and
+`archetype-ownership.json` as versioned compatibility contracts, and emits a
+stable payload manifest with per-file metadata and an aggregate SHA-256 digest.
+
+The package currently exposes only identity inspection:
+
+```sh
+factory-template --version
+factory-template --version --json
+```
+
+Applying the payload, interactive configuration, GitHub provisioning, npm
+publication, and disabling GitHub Template mode remain outside this package
+unit.
+
 ## Quickstart
 
 ### Create a repository
