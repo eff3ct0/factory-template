@@ -30,16 +30,22 @@ newer and pnpm. Its build derives the payload boundary from
 `archetype-ownership.json` as versioned compatibility contracts, and emits a
 stable payload manifest with per-file metadata and an aggregate SHA-256 digest.
 
-The package currently exposes only identity inspection:
+The package exposes one shared transactional operation model:
 
 ```sh
-factory-template --version
-factory-template --version --json
+factory-template plan --target ./new-project --config answers.json --non-interactive
+factory-template dry-run --target ./new-project --config answers.json --non-interactive
+factory-template apply --target ./new-project --config answers.json --non-interactive
+factory-template verify --target ./new-project --config answers.json --non-interactive
+factory-template doctor --target ./new-project --config answers.json --non-interactive
 ```
 
-Applying the payload, interactive configuration, GitHub provisioning, npm
-publication, and disabling GitHub Template mode remain outside this package
-unit.
+The commands emit a versioned JSON envelope on stdout, keep diagnostics and
+prompts on stderr, reject unknown files and symlink escapes, and roll back
+creator-owned writes after an apply failure. Applying the payload is local and
+offline; GitHub provisioning, npm publication, and disabling GitHub Template
+mode remain outside this package unit. See [`docs/creator.md`](docs/creator.md)
+for the state and recovery contract.
 
 ## Quickstart
 

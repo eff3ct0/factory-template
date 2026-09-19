@@ -1,7 +1,7 @@
 {
   "name": "factory-template-creator",
   "version": "0.1.0",
-  "description": "Immutable, versioned project payload metadata for the factory template creator.",
+  "description": "Immutable, versioned, transactional project creator for the factory template.",
   "type": "commonjs",
   "bin": {
     "factory-template": "dist/index.js"
@@ -17,6 +17,7 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "pnpm build && node --test test/*.test.mjs",
+    "test:creator": "pnpm build && node --test test/creator.test.mjs",
     "prepack": "pnpm build"
   },
   "devDependencies": {
